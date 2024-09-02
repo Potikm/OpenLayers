@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import 'ol/ol.css'; // Import základního CSS OpenLayers
-import Map from 'ol/Map'; // Import třídy Map
-import View from 'ol/View'; // Import třídy View
-import TileLayer from 'ol/layer/Tile'; // Import třídy TileLayer
-import OSM from 'ol/source/OSM'; // Import třídy OSM
-import { fromLonLat, toLonLat } from 'ol/proj'; // Import funkce pro převod souřadnic
-import { Draw } from 'ol/interaction'; // Import interakcí pro kreslení
-import { Vector as VectorLayer } from 'ol/layer'; // Import VectorLayer
-import { Vector as VectorSource } from 'ol/source'; // Import VectorSource
-import * as turf from '@turf/turf'; // Import knihovny Turf.js
+import 'ol/ol.css'; 
+import Map from 'ol/Map'; 
+import View from 'ol/View'; 
+import TileLayer from 'ol/layer/Tile'; 
+import OSM from 'ol/source/OSM'; 
+import { fromLonLat, toLonLat } from 'ol/proj'; 
+import { Draw } from 'ol/interaction'; 
+import { Vector as VectorLayer } from 'ol/layer';
+import { Vector as VectorSource } from 'ol/source'; 
+import * as turf from '@turf/turf'; 
 
 function App() {
-  const [map, setMap] = useState(null); // Stav pro mapu
+  const [map, setMap] = useState(null); 
   const [bollean, setBollean] = useState(null);
-  const [lines, setLines] = useState([]); // Stav pro uchovávání úseček
+  const [lines, setLines] = useState([]); 
   const [miles, setMiles] = useState(false);
   const [rad, setRad] = useState(false);
 
@@ -21,16 +21,16 @@ function App() {
     console.log(miles)
   }, [miles])
 
-  // useEffect pro přidávání a odebírání interakcí při změně bollean
+
   useEffect(() => {
     if (map) {
-      const vectorSource = new VectorSource(); // Vektorový zdroj pro úsečky
+      const vectorSource = new VectorSource();
       const draw = new Draw({
         source: vectorSource,
         type: 'LineString',
       });
 
-      // Funkce pro odstranění všech interakcí z mapy
+      
       const clearInteractions = () => {
         map.getInteractions().forEach((interaction) => {
           if (interaction instanceof Draw) {
@@ -39,27 +39,27 @@ function App() {
         });
       };
 
-      // Odstranit staré interakce před přidáním nové
+      
       clearInteractions();
 
       if (bollean) {
-        // Pokud bollean je true, přidáme logiku pro měření délky
+      
         draw.on('drawend', (event) => {
           const feature = event.feature;
           const coordinates = feature.getGeometry().getCoordinates();
 
-          // Transformace souřadnic z EPSG:3857 na EPSG:4326
+          
           const start = toLonLat(coordinates[0]);
           const end = toLonLat(coordinates[1]);
 
-          // Vytvoření úsečky v Turf.js
+         
           const line = turf.lineString([start, end]);
 
-          // Výpočet délky a azimutu
-          const length = turf.length(line, { units: 'kilometers' }); // Délka v kilometrech
-          const bearing = turf.bearing(turf.point(start), turf.point(end)); // Azimut
+      
+          const length = turf.length(line, { units: 'kilometers' }); 
+          const bearing = turf.bearing(turf.point(start), turf.point(end)); 
 
-          // Upozornění na výsledky
+        
           console.log(miles)
           if (document.getElementById("km").style.backgroundColor === "crimson"){
             alert(`Length: ${length.toFixed(2)} km\nAzimuth: ${bearing.toFixed(2)}°`);
@@ -69,7 +69,7 @@ function App() {
          
         });
       } else {
-        // Pokud bollean je false, přidáme logiku pro měření úhlu
+        
         draw.on('drawend', (event) => {
           const feature = event.feature;
           const coordinates = feature.getGeometry().getCoordinates();
@@ -80,7 +80,7 @@ function App() {
             const newLines = [...prevLines, coordinates];
             console.log(newLines);
             if (newLines.length === 2) {
-              // Vypočítat úhel, pokud máme dvě úsečky
+             
               const angle = calculateAngle(newLines);
               if (document.getElementById("deg").style.backgroundColor === "crimson"){
                 alert(`The angle is: ${angle.toFixed(2)}°`);
@@ -89,7 +89,7 @@ function App() {
                 alert(`The angle is: ${(angle.toFixed(2)*(pi/180))} Rad`);
               }
             
-              return []; // Reset lines pro nové měření
+              return []; 
             }
             return newLines;
           });
@@ -97,47 +97,47 @@ function App() {
         });
       }
 
-      map.addInteraction(draw); // Přidání aktuální interakce na mapu
+      map.addInteraction(draw); 
       setMap(map);
     }
   }, [bollean, map]);
 
   useEffect(() => {
-    // Inicializace mapy při prvním renderování
-    const vectorSource = new VectorSource(); // Vektorový zdroj pro úsečky
+    
+    const vectorSource = new VectorSource();
 
     const vectorLayer = new VectorLayer({
       source: vectorSource,
     });
 
-    // Vytvoření nové instance mapy OpenLayers
+  
     const initialMap = new Map({
       layers: [
         new TileLayer({
-          source: new OSM(), // Zdroj mapy - OpenStreetMap
+          source: new OSM(), 
         }),
-        vectorLayer, // Přidání vektorové vrstvy do mapy
+        vectorLayer, 
       ],
       view: new View({
-        center: fromLonLat([0, 0]), // Počáteční pozice [délka, šířka] v EPSG:3857
-        zoom: 2, // Počáteční úroveň přiblížení
+        center: fromLonLat([0, 0]), 
+        zoom: 2, 
       }),
-      target: 'map', // ID HTML elementu, kam se mapa připojí
+      target: 'map', 
     });
 
-    setMap(initialMap); // Nastavení instance mapy do stavu
+    setMap(initialMap); 
 
     return () => {
-      initialMap.setTarget(null); // Odstranění mapy při unmountování
+      initialMap.setTarget(null); 
     };
-  }, []); // useEffect spouštěný pouze při mountování a unmountování
+  }, []); 
 
   const calculateAngle = (lines) => {
-    const commonPoint = lines[0][1]; // Předpokládáme, že úsečky mají společný druhý bod
+    const commonPoint = lines[0][1]; 
     const firstLineStart = lines[0][0];
     const secondLineEnd = lines[1][1];
 
-    // Transformace souřadnic do EPSG:4326
+    
     const point1 = toLonLat(firstLineStart);
     const point2 = toLonLat(commonPoint);
     const point3 = toLonLat(secondLineEnd);
@@ -146,17 +146,17 @@ function App() {
     const bearingB = turf.bearing(turf.point(point2), turf.point(point3));
 
     let angle = bearingB - bearingA;
-    if (angle < 0) angle += 360; // Normalizace úhlu
+    if (angle < 0) angle += 360; 
     return angle;
   };
 
   return (
     <div className="mapDiv">
       <div
-        id="map" // ID HTML elementu, které bude použit jako cíl pro vykreslení mapy
+        id="map" 
         style={{
           width: '100%',
-          height: '500px', // Výška mapy
+          height: '500px', 
         }}
       ></div>
       <div className="buttons">
